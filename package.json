@@ -1,0 +1,16 @@
+{
+  "name": "imposter-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Imposter Game - Full Stack Application",
+  "scripts": {
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "install-all": "cd server && npm install && cd ../client && npm install",
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "start": "cd server && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
