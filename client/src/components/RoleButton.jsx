@@ -9,11 +9,7 @@ const RoleButton = ({ role, word }) => {
       <button
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        className={`px-6 py-3 rounded-lg font-semibold transition duration-200 ${
-          role === 'imposter' 
-            ? 'bg-red-600 hover:bg-red-700' 
-            : 'bg-green-600 hover:bg-green-700'
-        }`}
+        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition duration-200"
       >
         Role
       </button>

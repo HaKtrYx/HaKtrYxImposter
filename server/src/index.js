@@ -10,10 +10,11 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
-// Middleware - MUST come before routes
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
@@ -25,10 +26,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Socket.IO setup - AFTER routes
 const io = socketIO(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
     methods: ['GET', 'POST'],
     credentials: true
   },

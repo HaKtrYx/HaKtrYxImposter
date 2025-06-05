@@ -23,7 +23,10 @@ module.exports = (io) => {
 
       // If player doesn't exist, they need to be added first
       if (!player) {
-        socket.emit('error', { message: 'Player not found. Please join through the home page.' });
+        socket.emit('player-not-found', {
+          message: 'Please join the game first',
+          partyCode: partyCode
+        });
         return;
       }
 

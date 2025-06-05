@@ -1,4 +1,4 @@
-# README.md
+/usr/lib/node_modulessudo dnf reinstall nodejs npm# README.md
 
 # Imposter Word Game
 

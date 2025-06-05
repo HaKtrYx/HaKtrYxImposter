@@ -95,14 +95,15 @@ class Game {
       throw new Error('Need at least 3 players to start');
     }
 
+    // Update settings first before validation
     if (settings) {
-      this.updateSettings(settings);
+      this.settings = { ...this.settings, ...settings };
     }
 
     // Validate imposter count
-    const maxImposters = Math.floor(this.players.size / 2) - 1;
+    const maxImposters = Math.floor(this.players.size / 2);
     if (this.settings.imposterCount > maxImposters) {
-      this.settings.imposterCount = maxImposters;
+      throw new Error(`Maximum ${maxImposters} imposters allowed for ${this.players.size} players`);
     }
 
     // Select random word
@@ -248,7 +249,7 @@ class Game {
       stopVotes
     };
   }
-
+  // server/src/game/Game.js
   processImposterVotes() {
     const voteCount = new Map();
 
@@ -276,12 +277,25 @@ class Game {
     const caught = votedOut.filter(fp => this.imposters.includes(fp));
     this.caughtImposters = caught;
 
-    return {
-      votes: Object.fromEntries(voteCount),
-      imposters: this.imposters,
-      caught,
-      votedOut
-    };
+    if (caught.length > 0) {
+      this.status = 'final-messages';
+      this.gameResult = {
+        votes: Object.fromEntries(voteCount),
+        imposters: this.imposters,
+        caught,
+        votedOut
+      };
+    } else if (this.currentRound >= this.settings.maxChatRounds) {
+      // End game if max rounds reached without catching imposters
+      this.status = 'ended';
+      this.gameResult = {
+        winners: 'imposters',
+        imposters: this.imposters,
+        word: this.word
+      };
+    }
+
+    return { caught };
   }
 
   addFinalMessage(fingerprint, message) {
@@ -302,6 +316,16 @@ class Game {
       message,
       timestamp: Date.now()
     });
+
+    // If all caught imposters have sent their messages, update game status
+    if (this.finalMessages.length >= this.caughtImposters.length) {
+      this.status = 'ended';
+      this.gameResult = {
+        winners: 'crewmates',
+        imposters: this.imposters,
+        word: this.word
+      };
+    }
   }
 
   allFinalMessagesSent() {
