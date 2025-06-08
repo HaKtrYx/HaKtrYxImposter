@@ -1,51 +1,95 @@
-// server/src/index.js
 const express = require('express');
-const http = require('http');
-const socketIO = require('socket.io');
 const cors = require('cors');
-const gameRoutes = require('./routes/gameRoutes');
-const socketHandler = require('./sockets/socketHandler');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+const apiUrl = process.env.REACT_APP_API_URL;
 require('dotenv').config();
 
+
 const app = express();
-const server = http.createServer(app);
+const server = createServer(app);
 
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Middleware
 app.use(express.json());
+app.use(cors({
+    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    methods: ["GET", "POST", 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorisation']
+}));
 
-// Routes
-app.use('/api/game', gameRoutes);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-const io = socketIO(server, {
+// Socket.IO setup
+const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
-  transports: ['websocket', 'polling'],
-  allowEIO3: true
+      origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+      methods: ["GET", "POST", 'PUT', 'DELETE'],
+	  allowedHeaders: ['Content-Type', 'Authorisation']
+  }
 });
 
-// Socket handling
-socketHandler(io);
+// Game state
+let rooms = new Map();
+let userSocketMap = new Map();
 
-// Add debugging
+// Root route
+app.get('/', (req, res) => {
+  res.json({ status: 'Server is running' });
+});
+
+// Socket events
 io.on('connection', (socket) => {
-  console.log('Socket connected:', socket.id);
+  console.log('User connected:', socket.id);
+
+  socket.on('createRoom', (username) => {
+    const roomId = Math.random().toString(36).substring(2, 8);
+    rooms.set(roomId, {
+      id: roomId,
+      players: [{id: socket.id, username, isHost: true}],
+      gameStarted: false
+    });
+    userSocketMap.set(socket.id, {roomId, username});
+    socket.join(roomId);
+    io.to(roomId).emit('roomUpdate', rooms.get(roomId));
+  });
+
+  socket.on('joinRoom', ({roomId, username}) => {
+    const room = rooms.get(roomId);
+    if (room && !room.gameStarted) {
+      room.players.push({id: socket.id, username, isHost: false});
+      userSocketMap.set(socket.id, {roomId, username});
+      socket.join(roomId);
+      io.to(roomId).emit('roomUpdate', room);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    const userInfo = userSocketMap.get(socket.id);
+    if (userInfo) {
+      const room = rooms.get(userInfo.roomId);
+      if (room) {
+        room.players = room.players.filter(player => player.id !== socket.id);
+        if (room.players.length === 0) {
+          rooms.delete(userInfo.roomId);
+        } else {
+          io.to(userInfo.roomId).emit('roomUpdate', room);
+        }
+      }
+      userSocketMap.delete(socket.id);
+    }
+  });
+});
+
+// API routes
+app.get('/api/rooms', (req, res) => {
+  const roomsList = Array.from(rooms.values());
+  res.json(roomsList);
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+
+server.listen(PORT, HOST, () => {
+  console.log(`Server running on ${process.env.API_BASE_URL || `http://${HOST}:${PORT}`}`);
 });
