@@ -6,14 +6,16 @@ const path = require('path');
 const apiUrl = process.env.REACT_APP_API_URL;
 require('dotenv').config();
 
-
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 const app = express();
 const server = createServer(app);
 
 // Middleware
-app.use(express.json());
+app.use(express.static('public'));
 app.use(cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    origin: CLIENT_ORIGIN,
     methods: ["GET", "POST", 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorisation']
 }));
@@ -22,7 +24,7 @@ app.use(cors({
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-      origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+      origin: CLIENT_ORIGIN,
       methods: ["GET", "POST", 'PUT', 'DELETE'],
 	  allowedHeaders: ['Content-Type', 'Authorisation']
   }
@@ -85,10 +87,6 @@ app.get('/api/rooms', (req, res) => {
   const roomsList = Array.from(rooms.values());
   res.json(roomsList);
 });
-
-const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || '0.0.0.0';
-
 
 server.listen(PORT, HOST, () => {
   console.log(`Server running on ${process.env.API_BASE_URL || `http://${HOST}:${PORT}`}`);
