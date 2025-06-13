@@ -4,11 +4,10 @@
   "private": true,
   "description": "Imposter Game - Full Stack Application",
   "scripts": {
-    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
-    "install-all": "cd server && npm install && cd ../client && npm install",
-    "client": "cd client && npm run dev",
-    "server": "cd server && npm run dev",
-    "start": "cd server && npm start"
+    "build": "cd client && npm run build && cd ../server && npm run copy:client",
+    "start": "cd server && npm start",
+    "dev": "concurrently \"cd client && npm run dev\" \"cd server && npm run dev\"",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

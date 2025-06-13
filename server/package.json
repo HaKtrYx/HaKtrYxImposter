@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
+    "build": "npm run build:client && npm run copy:client",
+    "build:client": "cd ../client && npm run build",
+    "copy:client": "cp -r ../client/dist ./public",
     "start": "node src/index.js",
-    "build": "",
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
